@@ -66,6 +66,7 @@ func getAllBuckets(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Function to write data into bucket
 func writeData(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Page hit : /writeData")
@@ -92,36 +93,60 @@ func writeData(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Function to get data from a bucket
 func getAllData(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Page hit : /getAllData")
 
+	// Bucket name variable
 	var bucketName string
+	// Get bucket name from parameters
 	keys := r.URL.Query()["bucket"]
 	bucketName = keys[0]
-	fmt.Println(keys, bucketName)
+	
+	// Empty bucket content
+	var bucketContent []Data
 
+	// Open transaction
 	db.View(func(tx *bolt.Tx) error {
 		// Assume bucket exists and has keys
 		b := tx.Bucket([]byte(bucketName))
-
+		// Iterate over key-value pair
 		b.ForEach(func(k, v []byte) error {
 			fmt.Printf("key=%s, value=%s\n", k, v)
+			bucketContent = append(bucketContent,Data{Key:string(k),Value:string(v)})
 			return nil
 		})
 		return nil
 	})
+	
+	// Marshal bucket content
+	jsonData,err := json.Marshal(bucketContent)
+	
+	// Build response
+	var response APIResponse
+	response.Body = string(jsonData)
+	
+	// Marshal response
+	responseJSON,err := json.Marshal(response)
+	
+	// Return response
+	w.Write(responseJSON)
 }
 
+// Function to create a new bucket
 func createBucket(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Page hit : /createBucket")
 
+	// Bucket name variable
 	var bucketName string
+	// Get bucket name from request
 	keys := r.URL.Query()["bucket"]
 	bucketName = keys[0]
 	fmt.Println(keys, bucketName)
 
+	// Open transaction
 	db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 		if err != nil {
@@ -131,15 +156,19 @@ func createBucket(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Function to delete a bucket
 func deleteBucket(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Page hit : /deleteBucket")
 
+	// Bucket name variable
 	var bucketName string
-	if keys := r.URL.Query()["bucket"]; len(keys) > 1 {
-		bucketName = keys[0]
-	}
+	// Get bucket name from request
+	keys := r.URL.Query()["bucket"]
+	bucketName = keys[0]
+	fmt.Println(keys, bucketName)
 
+	// Open transaction
 	db.Update(func(tx *bolt.Tx) error {
 		err := tx.DeleteBucket([]byte(bucketName))
 		if err != nil {
@@ -149,6 +178,7 @@ func deleteBucket(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Function to get stats
 func getStats(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Page hit : /getStats")
