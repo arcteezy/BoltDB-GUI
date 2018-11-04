@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -53,16 +54,39 @@ func getAllBuckets(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Page hit : /getAllBuckets")
 
+	// List of buckets
+	var BucketList []string
+
 	// Create transaction
 	err = db.View(func(tx *bolt.Tx) error {
 		return tx.ForEach(func(bucketName []byte, _ *bolt.Bucket) error {
-			fmt.Println(string(bucketName))
+			BucketList = append(BucketList, string(bucketName))
 			return nil
 		})
 	})
 	if err != nil {
 		fmt.Println(err)
 		return
+	}
+
+	// Jsonize bucket list
+	jsonData, err := json.Marshal(BucketList)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Response variable
+	var response APIResponse
+	response.Body = string(jsonData)
+
+	// Jsonize response
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		log.Println(err)
+	}
+	// Sending response
+	if _, err = w.Write(jsonResponse); err != nil {
+		log.Println(err)
 	}
 }
 
@@ -103,7 +127,7 @@ func getAllData(w http.ResponseWriter, r *http.Request) {
 	// Get bucket name from parameters
 	keys := r.URL.Query()["bucket"]
 	bucketName = keys[0]
-	
+
 	// Empty bucket content
 	var bucketContent []Data
 
@@ -114,22 +138,22 @@ func getAllData(w http.ResponseWriter, r *http.Request) {
 		// Iterate over key-value pair
 		b.ForEach(func(k, v []byte) error {
 			fmt.Printf("key=%s, value=%s\n", k, v)
-			bucketContent = append(bucketContent,Data{Key:string(k),Value:string(v)})
+			bucketContent = append(bucketContent, Data{Key: string(k), Value: string(v)})
 			return nil
 		})
 		return nil
 	})
-	
+
 	// Marshal bucket content
-	jsonData,err := json.Marshal(bucketContent)
-	
+	jsonData, _ := json.Marshal(bucketContent)
+
 	// Build response
 	var response APIResponse
 	response.Body = string(jsonData)
-	
+
 	// Marshal response
-	responseJSON,err := json.Marshal(response)
-	
+	responseJSON, _ := json.Marshal(response)
+
 	// Return response
 	w.Write(responseJSON)
 }
@@ -147,13 +171,31 @@ func createBucket(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(keys, bucketName)
 
 	// Open transaction
-	db.Update(func(tx *bolt.Tx) error {
+	err = db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 		if err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 		return nil
 	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// Response variable
+	var response APIResponse
+	response.Body = "SUCCESSFUL"
+
+	// Jsonize response
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		log.Println(err)
+	}
+	// Sending response
+	if _, err = w.Write(jsonResponse); err != nil {
+		log.Println(err)
+	}
 }
 
 // Function to delete a bucket
@@ -169,13 +211,32 @@ func deleteBucket(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(keys, bucketName)
 
 	// Open transaction
-	db.Update(func(tx *bolt.Tx) error {
+	err = db.Update(func(tx *bolt.Tx) error {
 		err := tx.DeleteBucket([]byte(bucketName))
 		if err != nil {
-			return fmt.Errorf("create bucket: %s", err)
+			fmt.Println("delete bucket: %s", err)
 		}
 		return nil
 	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("ppppp")
+	// Response variable
+	var response APIResponse
+	response.Body = "SUCCESSFUL"
+
+	// Jsonize response
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		log.Println(err)
+	}
+	// Sending response
+	if _, err = w.Write(jsonResponse); err != nil {
+		log.Println(err)
+	}
 }
 
 // Function to get stats

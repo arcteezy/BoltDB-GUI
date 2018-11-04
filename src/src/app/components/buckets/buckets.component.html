@@ -1,0 +1,57 @@
+<div class="container">
+  <div class="card-body">
+
+    <p>
+      <span class="text-secondary">Buckets :</span>
+    </p>
+
+    <!-- Buckets list -->
+    <div class="container mb-4">
+      <ul class="list-group">
+        <li class="list-group-item" *ngFor="let bucket of buckets">
+          <div class="row">
+            <div class="col">
+              {{bucket}}
+            </div>
+            <div class="col text-right">
+              <i class="fa fa-trash" (click)="deleteBucket(bucket)" data-toggle="tooltip" title="Delete bucket"></i>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Button to add new bucket -->
+    <button class="btn btn-dark pull-right" data-toggle="modal" data-target="#newBucketModal">Create bucket</button>
+
+    <!-- Add new bucket modal -->
+    <div class="modal fade" id="newBucketModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <!-- Header -->
+          <div class="modal-header">
+            <h5 class="modal-title">Create Bucket</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <!-- Body -->
+          <div class="modal-body">
+            <form #newBucketForm="ngForm">
+              <!-- Bucket name -->
+              <div class="form-group">
+                <label for="bucketName">Bucket name :</label>
+                <input type="text" class="form-control" placeholder="Enter name" name="bucketName" ngModel>
+              </div>
+            </form>
+          </div>
+          <!-- Footer -->
+          <div class="modal-footer">
+            <button type="button" class="btn btn-dark" data-dismiss="modal" (click)="createBucket(newBucketForm)">Create</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
